@@ -77,31 +77,6 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::line( " Password: $wpuserpass" );
         WP_CLI::line( " Site URL: $wpurl" );
         WP_CLI::line( "=======================" );
-        
-        
-        // WP_CLI::confirm( "co ?", $assoc_args = array() );
-        // $input = \cli\input();
-        // $input = \cli\prompt('db name', 'root');
-        // $input = \cli\choose('choose', 'yna', 'n');
-        // $menu = array(
-        //     'output' => 'Output Examples',
-        //     'notify' => 'cli\Notify Examples',
-        //     'progress' => 'cli\Progress Examples',
-        //     'table' => 'cli\Table Example',
-        //     'colors' => 'cli\Colors example',
-        //     'quit' => 'Quit',
-        // );
-        
-        // $choice = \cli\menu($menu, null, 'Choose an example');
-        // \cli\line();
-        // \cli\line("========\nDots\n");
-        // $this->test_notify(new \cli\progress\Bar('  \cli\progress\Bar displays a progress bar', 1000000));
     }
-    public function test_notify(cli\Notify $notify, $cycle = 1000000, $sleep = null) {
-        for ($i = 0; $i < $cycle; $i++) {
-            $notify->tick();
-            if ($sleep) usleep($sleep);
-        }
-        $notify->finish();
-    }
+    
 }
