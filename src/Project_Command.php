@@ -19,47 +19,57 @@ class Project_Command extends WP_CLI_Command {
      * @when before_wp_load
      */
     public function new( $args, $assoc_args ) {
+
+        // $control_args = $this->extract_args( $assoc_args, array(
+		// 	'force'  => false,
+		// 	'theme'  => false,
+        // ) );
+
         WP_CLI::line( "=======================" );
         WP_CLI::line( " WordPress Installer!! " );
         WP_CLI::line( "=======================" );
-
-        echo WP_CLI::get_config('path');
-        return false;
-        
         
         $sitename = \cli\prompt( 'Project/Site Name', '' );
         if(!$sitename) {
             WP_CLI::error( 'Project/Site Name is empty' );
         }
-        $dbname = \cli\prompt( 'Database Name', $sitename );
+
+        $slug = str_replace( '-', ' ', strtolower($sitename) );
+        
+        $dbname = \cli\prompt( 'Database Name', $slug );
         $dbuser = \cli\prompt( 'Database User', 'root' );
         $dbpass = \cli\prompt( 'Database Password', '' );
 
-        // if ( ! @mkdir( $sitename, 0644, true /*recursive*/ ) ) {
-        //     $error = error_get_last();
-        //     WP_CLI::error( sprintf( "Failed to create directory '%s': %s.", $sitename, $error['message'] ) );
-        // }
-
-        // @chdir($sitename);
-        // $path = @getcwd();
-
+        if ( ! @mkdir( $slug, 0644, true /*recursive*/ ) ) {
+            $error = error_get_last();
+            WP_CLI::error( sprintf( "Failed to create directory '%s': %s.", $slug, $error['message'] ) );
+        }
+        file_put_contents("$slug/wp-cli.yml", "path: wp\napache_modules: mod_rewrite");
+        file_put_contents("$slug/index.php", "<?php\ndefine('WP_USE_THEMES', true); \nrequire(__DIR__ . '/wp/wp-blog-header.php');");
+        
+        @chdir($slug);
                 
         //create database, download and install WordPress
-        WP_CLI::runcommand( "core download --path=$sitename" );        
+        WP_CLI::runcommand( "core download" );        
         WP_CLI::runcommand( "core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass" );
-        WP_CLI::runcommand( "db create" );    
+        WP_CLI::runcommand( "db create" );  
         
-        $wpurl = \cli\prompt( 'WP Url', "http://localhost/$sitename" );
-        $wpuser = \cli\prompt( 'WP User', 'admin' );
-        $wpuserpass = \cli\prompt( 'WP User Password', 'admin' );
-        $wpuseremail = \cli\prompt( 'WP User Email', 'admin@localhost' );
+         //move wp-config to root directory
+         @rename('wp/wp-config.php', 'wp-config.php');         
+         
+         $wpurl = \cli\prompt( 'WP Url', "http://localhost/$sitename" );
+         $wpuser = \cli\prompt( 'WP User', 'admin' );
+         $wpuserpass = \cli\prompt( 'WP User Password', 'admin' );
+         $wpuseremail = \cli\prompt( 'WP User Email', 'admin@localhost.pl' );
 
-
+        //set wp-config constants
+         WP_CLI::runcommand( "config set WP_DEBUG true --raw --type=constant" );       
+         WP_CLI::runcommand( "config set WP_HOME  '{$wpurl}/' --raw --type=constant" );       
+         WP_CLI::runcommand( "config set WP_SITEURL '{$wpurl}/wp/' --raw --type=constant" );
         
-        WP_CLI::runcommand( "core install --url=\"$wpurl\" --title=\"$sitename\" --admin_user=\"$wpuser\" --admin_password=\"$wpuser\" --admin_email=\"$wpuseremail\" --path=\"$sitename\"" );       
-        
+        WP_CLI::runcommand( "core install --url=\"$wpurl\" --title=\"$sitename\" --admin_user=\"$wpuser\" --admin_password=\"$wpuser\" --admin_email=\"$wpuseremail\"" );  
         //set pretty urls
-        WP_CLI::runcommand( "rewrite structure '/%postname%/' --hard" );    
+        WP_CLI::runcommand( 'rewrite structure "/%postname%/" --hard' );    
         WP_CLI::runcommand( "rewrite flush --hard" );    
         
         //delete akismet and hello dolly
@@ -77,6 +87,33 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::line( " Password: $wpuserpass" );
         WP_CLI::line( " Site URL: $wpurl" );
         WP_CLI::line( "=======================" );
+       
+        
     }
+
+    public function test() {
+       
+    }
+
+    protected function create_files( $files_and_contents, $force = false ) {
+		$wp_filesystem = $this->init_wp_filesystem();
+		$wrote_files = array();
+
+		foreach ( $files_and_contents as $filename => $contents ) {
+			$should_write_file = $this->prompt_if_files_will_be_overwritten( $filename, $force );
+			if ( ! $should_write_file ) {
+				continue;
+			}
+
+			$wp_filesystem->mkdir( dirname( $filename ) );
+
+			if ( ! $wp_filesystem->put_contents( $filename, $contents ) ) {
+				WP_CLI::error( "Error creating file: $filename" );
+			} elseif ( $should_write_file ) {
+				$wrote_files[] = $filename;
+			}
+		}
+		return $wrote_files;
+	}
     
 }
