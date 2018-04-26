@@ -1,0 +1,11 @@
+<?php
+/*
+Template Name: {{title_ucfirst}} Page
+*/
+
+get_header(); the_post();?>
+
+<h1 class="page-title"><?php the_title(); ?></h1>
+<div class="page-content"><?php the_content(); ?></div>
+
+<?php get_footer();
