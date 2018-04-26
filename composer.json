@@ -1,0 +1,31 @@
+{
+    "name": "mwga/project-command",
+    "type": "wp-cli-package",
+    "authors": [
+        {
+            "name": "Mariusz",
+            "email": "mariuszgbur@o2.pl"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "autoload": {
+        "psr-4": {
+            "": "src/"
+        },
+        "files": [ "project-command.php" ]
+    },
+    "require": {},
+    "require-dev": {
+        "wp-cli/wp-cli": "^1.5"
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.x-dev"
+        },
+        "bundled": true,
+        "commands": [
+            "init"
+        ]
+    }
+}
