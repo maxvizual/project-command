@@ -20,11 +20,7 @@ class Project_Command extends WP_CLI_Command {
      */
     public function new( $args, $assoc_args ) {
 
-        // $control_args = $this->extract_args( $assoc_args, array(
-		// 	'force'  => false,
-		// 	'theme'  => false,
-        // ) );
-
+        
         WP_CLI::line( "=======================" );
         WP_CLI::line( " WordPress Installer!! " );
         WP_CLI::line( "=======================" );
@@ -68,6 +64,7 @@ class Project_Command extends WP_CLI_Command {
          WP_CLI::runcommand( "config set WP_SITEURL '{$wpurl}/wp/' --raw --type=constant" );
         
         WP_CLI::runcommand( "core install --url=\"$wpurl\" --title=\"$sitename\" --admin_user=\"$wpuser\" --admin_password=\"$wpuser\" --admin_email=\"$wpuseremail\"" );  
+
         //set pretty urls
         WP_CLI::runcommand( 'rewrite structure "/%postname%/" --hard' );    
         WP_CLI::runcommand( "rewrite flush --hard" );    
@@ -90,30 +87,5 @@ class Project_Command extends WP_CLI_Command {
        
         
     }
-
-    public function test() {
-       
-    }
-
-    protected function create_files( $files_and_contents, $force = false ) {
-		$wp_filesystem = $this->init_wp_filesystem();
-		$wrote_files = array();
-
-		foreach ( $files_and_contents as $filename => $contents ) {
-			$should_write_file = $this->prompt_if_files_will_be_overwritten( $filename, $force );
-			if ( ! $should_write_file ) {
-				continue;
-			}
-
-			$wp_filesystem->mkdir( dirname( $filename ) );
-
-			if ( ! $wp_filesystem->put_contents( $filename, $contents ) ) {
-				WP_CLI::error( "Error creating file: $filename" );
-			} elseif ( $should_write_file ) {
-				$wrote_files[] = $filename;
-			}
-		}
-		return $wrote_files;
-	}
     
 }
