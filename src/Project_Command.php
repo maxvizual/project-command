@@ -40,15 +40,17 @@ class Project_Command extends WP_CLI_Command {
             $error = error_get_last();
             WP_CLI::error( sprintf( "Failed to create directory '%s': %s.", $slug, $error['message'] ) );
         }
+        if ( ! @mkdir( "$slug/app/mu-plugins", 0644, true /*recursive*/ ) ) {
+            $error = error_get_last();
+            WP_CLI::error( sprintf( "Failed to create directory '%s': %s.", $slug, $error['message'] ) );
+        }
         file_put_contents("$slug/wp-cli.yml", "path: wp\napache_modules: mod_rewrite");
         file_put_contents("$slug/index.php", "<?php\ndefine('WP_USE_THEMES', true); \nrequire(__DIR__ . '/wp/wp-blog-header.php');");
+        file_put_contents("$slug/README.md", self::mustache_render( 'README.md.mustache', array() ));
+        file_put_contents("$slug/app/mu-plugins/mu-autoloader.php", self::mustache_render( 'mu-autoloader.php.mustache', array() ));
         
         @chdir($slug);
-
-        $files_written = $this->create_files( array(
-            "README.md" => self::mustache_render( 'README.md.mustache', array() ),   
-        ), false );
-                
+                     
         //create database, download and install WordPress
         WP_CLI::runcommand( "core download" );        
         WP_CLI::runcommand( "core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass" );
@@ -131,9 +133,6 @@ class Project_Command extends WP_CLI_Command {
             file_put_contents("index.php", "<?php\ndefine('WP_USE_THEMES', true); \nrequire(__DIR__ . '/wp/wp-blog-header.php');");
         }
         
-        $files_written = $this->create_files( array(
-            "README.md" => self::mustache_render( 'README.md.mustache', array() ),   
-        ), false );
                         
         // //create database, download and install WordPress
         WP_CLI::runcommand( "core download" );        
@@ -201,9 +200,9 @@ class Project_Command extends WP_CLI_Command {
     public function migrate( $args, $assoc_args ) {
         
         $wpsdb_settings = get_option( 'wpsdb_settings');
-
+        
         if(!$wpsdb_settings){
-            $this->wpsdb();
+            $this->wpsdb(null, null);
             $wpsdb_settings = get_option( 'wpsdb_settings');
         }
 
@@ -217,7 +216,7 @@ class Project_Command extends WP_CLI_Command {
         
         $profile = \cli\prompt( 'Select Profile', '1' );
 
-        if(!isset($wpsdb_settings['profiles'][$profile])){
+        if(!isset($wpsdb_settings['profiles'][$profile-1])){
             WP_CLI::error( "Brak profilu.");
         }
         
@@ -241,8 +240,13 @@ class Project_Command extends WP_CLI_Command {
         $base = $cwd; 
         $base_src = "$cwd/src"; 
 
-        if ( $args[0] != 'src' && (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] )) ) {
-            WP_CLI::error( "Invalid slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
+        // nie wymaga slug w parametrze 
+        $skip_sulg = array('src' , 'log');
+
+        if(in_array($args[0], $skip_slug )){
+            if (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
+                WP_CLI::error( "Invalid slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
+            }
         }
 
         $slug = isset( $args[1]) ? $args[1] : '';
