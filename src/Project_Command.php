@@ -379,6 +379,11 @@ class Project_Command extends WP_CLI_Command {
                 $this->append_to_file($file, $code, 'tp');
 
             break;
+            case 'part':
+                $code = self::mustache_render( 'template-part.scss.mustache', $data );
+                $file = "$base_src/scss/style.scss";                
+                $this->append_to_file($file, $code, 'part');
+            break;
             case 'cpt':
                 $code = self::mustache_render( 'template-custom_post_type.mustache', $data );
                 $file = "$base_src/php/inc/custom-post-types.php";                
