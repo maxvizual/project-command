@@ -1,0 +1,13 @@
+register_taxonomy(
+    '{{slug}}',
+    '{{post_type}}',
+    array(
+        'label' => __( '{{title_ucfirst}}' ),
+        'rewrite' => true,
+        'hierarchical' => true,
+        'public'=>true,
+        'show_ui'=>true,
+        'query_var'=>true,
+        'show_in_nav_menus' => true
+    )
+);

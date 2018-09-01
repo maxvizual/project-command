@@ -1,0 +1,17 @@
+function shortcode_{{slug}}_func( $atts, $content = "" ) {
+	$atts = shortcode_atts( array(		
+		'id' => 1,
+    ), $atts, '{{slug}}' );
+    ob_start();
+    ?>
+    
+    <?php echo $atts['id']; ?>
+    <?php echo $content; ?>
+
+    <?php
+    $content = ob_get_contents();
+    ob_clean();
+
+	return $content;
+}
+add_shortcode( '{{slug}}', 'shortcode_{{slug}}_func' );

@@ -235,23 +235,30 @@ class Project_Command extends WP_CLI_Command {
 
         if ( ! $args ) {
 			WP_CLI::error( "Invalid args." );
-		}
+        }
+        
+        $cwd =  getcwd(); 
+        $base = $cwd; 
+        $base_src = "$cwd/src"; 
+
+        if ( $args[0] != 'src' && (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] )) ) {
+            WP_CLI::error( "Invalid slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
+        }
+
+        $slug = isset( $args[1]) ? $args[1] : '';
+
+        $data = array(
+            'slug' => $slug,
+            'title_ucfirst' => ucfirst( $slug )
+        );
+
+        $force = isset($assoc_args['force']);
 
         switch($args[0]) {
-            case 'theme':
-                if ( !isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
-                    WP_CLI::error( "Invalid theme slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
-                }
-
-                $slug = $args[1];
+            case 'theme': 
 
                 $theme_root = get_theme_root();
                 $theme_path = "$theme_root/$slug";
-
-                $data = array(
-                    'slug' => $slug,
-                    'title_ucfirst' => ucfirst( $slug )
-                );
 
                 if(!is_dir($theme_path)){
                     @mkdir($theme_path, 0777, true);
@@ -268,7 +275,7 @@ class Project_Command extends WP_CLI_Command {
                     "$theme_path/inc/setup-theme.php" => self::read_file( 'src/php/inc/setup-theme.php.mustache', $data ),
                     "$theme_path/style.css" => self::mustache_render( 'src/css/style.css.mustache', $data ),
                     "$theme_path/script.js" => self::mustache_render( 'src/js/script.js.mustache', $data ),
-                ), false );
+                ), $force );
 
                 $ask = \cli\prompt( "Activate Theme $slug [Y/n]?", "Y" );
 
@@ -280,11 +287,9 @@ class Project_Command extends WP_CLI_Command {
             case 'log':
                 $files_written = $this->create_files( array(
                     "log.php" => self::mustache_render( 'log.php.mustache', array() ),   
-                ), false );
+                ), $force );
             break;
-            case 'src':
-                $base =  getcwd(); 
-                $base_src = "$base/src"; 
+            case 'src':  
                
                 $dir = dirname( dirname( __FILE__ ) ) . '/templates/';
                 $files = self::find_all_files($dir . 'src');
@@ -323,7 +328,7 @@ class Project_Command extends WP_CLI_Command {
                     $files_array["$base/$file_target"] = self::mustache_render($file_template, $data );
                 }
                 
-                $files_written = $this->create_files( $files_array, true );
+                $files_written = $this->create_files( $files_array, $force );
 
             break;
             case 'typology':
@@ -331,66 +336,84 @@ class Project_Command extends WP_CLI_Command {
                 WP_CLI::runcommand( "post create $typology_content --post_type=page --post_title=Typology --post_status=publish" );                 
             break;
             case 'page-template':
-            case 'pt':
-                $theme = $this->get_theme_name(true);                
-                $template_dir = get_theme_root( $theme ) . '/' . $theme;
+            case 'pt': 
 
-               
-                if ( !isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
-                    WP_CLI::error( "Invalid template slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
+                if(!is_dir("$base_src/php/page-templates")){
+                    @mkdir("$base_src/php/page-templates", 0777, true);
                 }
-
-                $slug = $args[1];
-
-                $data = array(
-                    'slug' => $slug,
-                    'title_ucfirst' => ucfirst( $slug )
-                );
-
-                if(!is_dir("$template_dir/page-templates")){
-                    @mkdir("$template_dir/page-templates", 0777, true);
-                }
-                if(!is_dir("$template_dir/assets/src/scss/page-templates")){
-                    @mkdir("$template_dir/assets/src/scss/page-templates", 0777, true);
+                if(!is_dir("$base_src/scss/page-templates")){
+                    @mkdir("$base_src/scss/page-templates", 0777, true);
                 }
 
                 $files_written = $this->create_files( array(
-                    "$template_dir/page-templates/$slug-page.php" => self::mustache_render( 'page-template-php.mustache', $data ),
-                    "$template_dir/assets/src/scss/page-templates/_$slug.scss" => self::mustache_render( 'page-template-scss.mustache', $data ),
+                    "$base_src/php/page-templates/$slug-page.php" => self::mustache_render( 'page-template.php.mustache', $data ),
+                    "$base_src/scss/page-templates/_$slug.scss" => self::mustache_render( 'page-template.scss.mustache', $data ),
                 ), false );
 
             break;
             case 'template-part':
             case 'tp':
-                $theme = $this->get_theme_name(true);                
-                $template_dir = get_theme_root( $theme ) . '/' . $theme;
 
-            
-                if ( !isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
-                    WP_CLI::error( "Invalid template slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
+                if(!is_dir("$base_src/php/template-parts")){
+                    @mkdir("$base_src/php/template-parts", 0777, true);
                 }
-
-                $slug = $args[1];
-
-                $data = array(
-                    'slug' => $slug,
-                    'title_ucfirst' => ucfirst( $slug )
-                );
-
-                if(!is_dir("$template_dir/template-parts")){
-                    @mkdir("$template_dir/template-parts", 0777, true);
-                }
-                if(!is_dir("$template_dir/assets/src/scss/template-parts")){
-                    @mkdir("$template_dir/assets/src/scss/template-parts", 0777, true);
+                if(!is_dir("$base_src/scss/template-parts")){
+                    @mkdir("$base_src/scss/template-parts", 0777, true);
                 }
 
                 $files_written = $this->create_files( array(
-                    "$template_dir/template-parts/$slug-page.php" => self::mustache_render( 'template-part-php.mustache', $data ),
-                    "$template_dir/assets/src/scss/template-parts/_$slug.scss" => self::mustache_render( 'template-part-scss.mustache', $data ),
+                    "$base_src/php/template-parts/$slug.php" => self::mustache_render( 'template-part.php.mustache', $data ),
+                    "$base_src/scss/template-parts/_$slug.scss" => self::mustache_render( 'template-part.scss.mustache', $data ),
                 ), false );
+            break;
+            case 'cpt':
+                $code = self::mustache_render( 'template-custom_post_type.mustache', $data );
+                $file = "$base_src/php/inc/custom-post-types.php";
+                $file_content = file_get_contents($file);
+                $type = "cpt";
+                if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
+                    file_put_contents($file, $content);
+                }
+            break;
+            case 'tax':
+                if ( !isset( $args[2]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[2] ) ) {
+                    WP_CLI::error( "Invalid post_type specified. Template post_type can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
+                }
+
+                $data['post_type'] = $args[2];
+                $code = self::mustache_render( 'template-taxonomy.mustache', $data );
+
+                $file = "$base_src/php/inc/custom-post-types.php";
+                $file_content = file_get_contents($file);
+
+                $type = "tax";
+
+                if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
+                    file_put_contents($file, $content);
+                }
+    
+            break;
+            case 'sc':
+                $code = self::mustache_render( 'template-shortcode.mustache', $data );
+                $file = "$base_src/php/inc/shortcodes.php";
+                $file_content = file_get_contents($file);
+                $type = "sc";
+                if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
+                    file_put_contents($file, $content);
+                }
             break;
         }
         
+    }
+    protected function append_content($subject, $code, $type) {
+        $inject = "/* [inject $type] */";
+        $split = preg_split("/(\/.+inject\s$type.+\/)/", $subject);
+        if(count($split) == 2) {
+            return $split[0] . $code . "\n$inject\n" . $split[1];
+        }else {
+            WP_CLI::error( "$inject can not be found" );
+        }
+        return false;
     }
     protected function wpsdb_create_profiles() {
         
