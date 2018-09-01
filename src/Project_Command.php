@@ -156,7 +156,7 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::runcommand( "config set WP_CONTENT_URL \"WP_HOME . '/app'\" --raw --type=constant --add");
 
                 
-        WP_CLI::runcommand( "core install --url=\"$wpurl\" --title=\"$sitename\" --admin_user=\"$wpuser\" --admin_password=\"$wpuser\" --admin_email=\"$wpuseremail\"" );  
+        WP_CLI::runcommand( "core install --url=\"$wpurl\" --title=\"$sitename\" --admin_user=\"$wpuser\" --admin_password=\"$wpuser\" --admin_email=\"$wpuseremail\" --skip-plugins" );  
 
         //set pretty urls
         WP_CLI::runcommand( 'rewrite structure "/%postname%/" --hard' );    
