@@ -350,6 +350,10 @@ class Project_Command extends WP_CLI_Command {
                     "$base_src/scss/page-templates/_$slug.scss" => self::mustache_render( 'page-template.scss.mustache', $data ),
                 ), false );
 
+                $code = "@import 'page-templates/$slug';";
+                $file = "$base_src/scss/style.scss";                
+                $this->append_to_file($file, $code, 'pt');
+
             break;
             case 'template-part':
             case 'tp':
@@ -365,15 +369,16 @@ class Project_Command extends WP_CLI_Command {
                     "$base_src/php/template-parts/$slug.php" => self::mustache_render( 'template-part.php.mustache', $data ),
                     "$base_src/scss/template-parts/_$slug.scss" => self::mustache_render( 'template-part.scss.mustache', $data ),
                 ), false );
+
+                $code = "@import 'template-parts/$slug';";
+                $file = "$base_src/scss/style.scss";                
+                $this->append_to_file($file, $code, 'tp');
+
             break;
             case 'cpt':
                 $code = self::mustache_render( 'template-custom_post_type.mustache', $data );
-                $file = "$base_src/php/inc/custom-post-types.php";
-                $file_content = file_get_contents($file);
-                $type = "cpt";
-                if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
-                    file_put_contents($file, $content);
-                }
+                $file = "$base_src/php/inc/custom-post-types.php";                
+                $this->append_to_file($file, $code, 'cpt');
             break;
             case 'tax':
                 if ( !isset( $args[2]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[2] ) ) {
@@ -381,30 +386,27 @@ class Project_Command extends WP_CLI_Command {
                 }
 
                 $data['post_type'] = $args[2];
+
                 $code = self::mustache_render( 'template-taxonomy.mustache', $data );
-
                 $file = "$base_src/php/inc/custom-post-types.php";
-                $file_content = file_get_contents($file);
-
-                $type = "tax";
-
-                if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
-                    file_put_contents($file, $content);
-                }
-    
+                $this->append_to_file($file, $code, 'tax');    
             break;
             case 'sc':
                 $code = self::mustache_render( 'template-shortcode.mustache', $data );
-                $file = "$base_src/php/inc/shortcodes.php";
-                $file_content = file_get_contents($file);
-                $type = "sc";
-                if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
-                    file_put_contents($file, $content);
-                }
+                $file = "$base_src/php/inc/shortcodes.php";                
+                $this->append_to_file($file, $code, 'sc');
             break;
         }
         
     }
+
+    protected function append_to_file($file, $code, $type) {
+        $file_content = file_get_contents($file);
+        if(false !== ($content = $this->append_content($file_content, $code,  $type)) ){
+            file_put_contents($file, $content);
+        }
+    }
+
     protected function append_content($subject, $code, $type) {
         $inject = "/* [inject $type] */";
         $split = preg_split("/(\/.+inject\s$type.+\/)/", $subject);
