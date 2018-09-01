@@ -1,0 +1,16 @@
+<?php
+
+function theme_scripts_styles() {    
+    wp_enqueue_style( 'style', get_theme_file_uri( '/style.css' ), array(), '1.0' );
+    wp_enqueue_script( 'script', get_theme_file_uri( '/script.js' ), array('jquery'), '1.0', true );
+
+    $vars = array(        
+        'home_url' => trailingslashit( home_url() ),
+        'ajax_url' => admin_url( 'admin-ajax.php' ),        
+        'l10n'     => array()
+    );
+
+    wp_localize_script('script', '__jsVars', apply_filters( 'theme/localize/script', $vars ));
+}
+
+add_action( 'wp_enqueue_scripts', 'theme_scripts_styles' );

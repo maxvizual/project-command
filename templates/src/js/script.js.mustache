@@ -1,0 +1,19 @@
+/* requires: 
+lib\popper.min.js
+lib\bootstrap.js 
+lib\js.cookie-2.1.4.min.js
+*/
+
+(function (api, $) {
+    'use strict'; 
+
+    api.init = function () {
+        $('html').removeClass('no-js'); 
+    };
+
+    //document ready
+    $(function(){
+        api.init();
+    });
+
+})(window, jQuery); 

@@ -1,0 +1,52 @@
+# Spis Treści
+- Konfiguracja
+- Nowy projekt
+- Istniejący projekt
+- Developerka
+
+# Konfiguracja
+### Konfiguracja projektu znajduję się w pliku `config.json`
+
+- Nadpisywanie konfiguracji lokalnie - zapisać plik `config.json` -> `local.config.json`
+
+### Ustawienia `wp-db-sync` 
+
+```json
+"wpsdb": {
+    "profiles": [
+        {
+            "name": "DEV PULL",
+            "connection_info": "<connection_info>",
+            "replace_old" : ["<url>", "<path>"]
+        },
+        {
+            "name": "PROD PULL",
+            "connection_info": "<connection_info>",
+            "replace_old" : ["<url>", "<path>"]
+        }
+    ]
+}
+```
+
+# Nowy projekt
+
+Tworzenie nowego projektu: 
+- instalacja wordpressa `wp project new`
+- generowanie templatki bez plików źródłowych `wp project add theme <theme>`
+- generowanie plików źródłowychy (src/, package.json, gulpfile.js, ...) `wp project add src`
+> UWAGA! wszystkie pliki templatki znajdują się w katalogu src łącznie z .php, developerki dokonujemy tylko w katalogu `src/` pliki będą automatycznie kopiowane do katalogu `app/templates/<theme>/`, który jest poza repozytorium.
+
+# Istniejący projekt
+
+Odtwarzanie projektu z repozytorium
+- sklonowanie istniejącego repozytorium `git clone ...`
+- instalacja wordpressa `wp project install`
+- synchronizacja bazy `wp project migrate`
+
+> UWAGA! upewnić się, że w `config.json` ustawione są poprawnie `wpsdb": { "profiles": ... }`.
+
+# Developerka
+- instalacja modułów `npm install`
+- praca developerska `gulp`
+- tworzenia builda `gulp build`
+
