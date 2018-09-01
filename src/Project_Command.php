@@ -241,7 +241,7 @@ class Project_Command extends WP_CLI_Command {
         $base_src = "$cwd/src"; 
 
         // nie wymaga slug w parametrze 
-        $skip_sulg = array('src' , 'log');
+        $skip_slug = array('src' , 'log');
 
         if(in_array($args[0], $skip_slug )){
             if (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
