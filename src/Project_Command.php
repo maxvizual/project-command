@@ -380,7 +380,13 @@ class Project_Command extends WP_CLI_Command {
 
             break;
             case 'part':
-                $code = self::mustache_render( 'template-part.scss.mustache', $data );
+                if(!is_dir("$base_src/scss/partials")){
+                    @mkdir("$base_src/scss/partials", 0777, true);
+                }
+                $files_written = $this->create_files( array(                    
+                    "$base_src/scss/partials/_$slug.scss" => self::mustache_render( 'template-part.scss.mustache', $data ),
+                ), false );
+                $code = "@import 'partials/$slug';";
                 $file = "$base_src/scss/style.scss";                
                 $this->append_to_file($file, $code, 'part');
             break;
