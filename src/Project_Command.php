@@ -84,7 +84,7 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::runcommand( "theme delete twentysixteen" ); 
         
         //create menu
-        WP_CLI::runcommand( "menu create \"Main Navigation\"" ); 
+        WP_CLI::runcommand( "menu create \"Top Menu\"" ); 
         
         WP_CLI::success( "Installation is complete. Your username/password is listed below.");
         WP_CLI::line( "=======================" );
@@ -232,6 +232,8 @@ class Project_Command extends WP_CLI_Command {
      */
     public function add( $args, $assoc_args ) {
 
+        WP_CLI::line( "=========== add {$args[0]} ============" );
+
         if ( ! $args ) {
 			WP_CLI::error( "Invalid args." );
         }
@@ -243,7 +245,7 @@ class Project_Command extends WP_CLI_Command {
         // nie wymaga slug w parametrze 
         $skip_slug = array('src' , 'log');
 
-        if(in_array($args[0], $skip_slug )){
+        if(!in_array($args[0], $skip_slug )){
             if (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
                 WP_CLI::error( "Invalid slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
             }
@@ -275,17 +277,18 @@ class Project_Command extends WP_CLI_Command {
                     "$theme_path/functions.php" => self::mustache_render( 'src/php/functions.php.mustache', $data ),
                     "$theme_path/inc/class-wp-bootstrap-navwalker.php" => self::read_file( 'src/php/inc/class-wp-bootstrap-navwalker.php.mustache', $data ),
                     "$theme_path/inc/enqueue-scripts-styles.php" => self::read_file( 'src/php/inc/enqueue-scripts-styles.php.mustache', $data ),
+                    "$theme_path/inc/custom-post-types.php" => self::read_file( 'src/php/inc/custom-post-types.php.mustache', $data ),
                     "$theme_path/inc/helpers-functions.php" => self::read_file( 'src/php/inc/helpers-functions.php.mustache', $data ),
                     "$theme_path/inc/setup-theme.php" => self::read_file( 'src/php/inc/setup-theme.php.mustache', $data ),
+                    "$theme_path/inc/shortcodes.php" => self::read_file( 'src/php/inc/shortcodes.php.mustache', $data ),
                     "$theme_path/style.css" => self::mustache_render( 'src/css/style.css.mustache', $data ),
                     "$theme_path/script.js" => self::mustache_render( 'src/js/script.js.mustache', $data ),
                 ), $force );
 
-                $ask = \cli\prompt( "Activate Theme $slug [Y/n]?", "Y" );
-
-                if(strtolower($ask) == 'y') {                    
-                    WP_CLI::runcommand( "theme activate $slug" ); 
-                }
+                WP_CLI::runcommand( "theme activate $slug" ); 
+                WP_CLI::runcommand( "project add src" ); 
+                WP_CLI::runcommand( "project add log" ); 
+              
 
             break;
             case 'log':

@@ -5,28 +5,28 @@ function theme_setup() {
     add_theme_support( 'post-thumbnails' );
 
     register_nav_menus( array(
-		'top'    => __( 'Top Menu', 'twentyseventeen' ),
-		'social' => __( 'Social Links Menu', 'twentyseventeen' ),
+		'top'    => __( 'Top Menu' ),
+		'social' => __( 'Social Links Menu' ),
     ) );
     
     // add_image_size( 'featured-image', 2000, 1200, true );
 
-    add_theme_support( 'html5', array(	
-			'gallery',
-			'caption',
-    ) );
+	//    add_theme_support( 'html5', array(	
+	//			'gallery',
+	//			'caption',
+	//    ) );
+	//    
+	//    add_theme_support( 'post-formats', array(
+	//			'aside',
+	//			'image',
+	//			'video',
+	//			'quote',
+	//			'link',
+	//			'gallery',
+	//			'audio',
+	//    ) );
     
-    add_theme_support( 'post-formats', array(
-			'aside',
-			'image',
-			'video',
-			'quote',
-			'link',
-			'gallery',
-			'audio',
-    ) );
-    
-    add_editor_style( array( 'editor-style.css' ) );
+    // add_editor_style( array( 'editor-style.css' ) );
 }
 add_action( 'after_setup_theme', 'theme_setup' );
 
