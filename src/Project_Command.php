@@ -66,7 +66,7 @@ class Project_Command extends WP_CLI_Command {
 
         //set wp-config constants
         WP_CLI::runcommand( "config set WP_DEBUG true --raw --type=constant" );       
-        WP_CLI::runcommand( "config set WP_HOME  '{$wpurl}/' --raw --type=constant" );       
+        WP_CLI::runcommand( "config set WP_HOME  '{$wpurl}' --raw --type=constant" );       
         WP_CLI::runcommand( "config set WP_SITEURL '{$wpurl}/wp/' --raw --type=constant" );
         WP_CLI::runcommand( "config set WP_CONTENT_DIR \"dirname(__FILE__) . '/app'\" --raw --type=constant");
         WP_CLI::runcommand( "config set WP_CONTENT_URL \"WP_HOME . '/app'\" --raw --type=constant");
@@ -209,18 +209,21 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::line( "=======================" );
         if($wpsdb_settings['profiles']) {
             foreach($wpsdb_settings['profiles'] as $key=>$profile){
-                WP_CLI::line( ($key+1) . ") " . $profile['name'] );
+                WP_CLI::line( $profile['name'] . ' ID:' . ($key+1) );
             }
         }
         WP_CLI::line( "=======================" );
         
-        $profile = \cli\prompt( 'Select Profile', '1' );
+        $profile_id = \cli\prompt( 'Select Profile ID', '' );
 
-        if(!isset($wpsdb_settings['profiles'][$profile-1])){
+        if(!isset($wpsdb_settings['profiles'][$profile_id-1])){
             WP_CLI::error( "Brak profilu.");
         }
-        
-        WP_CLI::runcommand( "wpsdb migrate {$profile}" );
+
+        $profile_name = $wpsdb_settings['profiles'][$profile_id-1]['name'];
+       
+        WP_CLI::line( "Migracja profilu: {$profile_name}" );
+        WP_CLI::runcommand( "wpsdb migrate {$profile_id}" );
 
     }
     /**
@@ -246,7 +249,7 @@ class Project_Command extends WP_CLI_Command {
         $skip_slug = array('src' , 'log');
 
         if(!in_array($args[0], $skip_slug )){
-            if (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-]*$/', $args[1] ) ) {
+            if (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-_]*$/', $args[1] ) ) {
                 WP_CLI::error( "Invalid slug specified. Template slugs can contain only lowercase alphanumeric characters or dashes, and start with a letter." );
             }
         }
