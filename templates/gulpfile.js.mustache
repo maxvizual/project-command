@@ -14,6 +14,7 @@ const
     concat = require('gulp-concat'),
     stripdebug = require('gulp-strip-debug'),
     sourcemaps = require('gulp-sourcemaps'),
+    clean = require('gulp-clean'),
     uglify = require('gulp-uglify');
 
 if(fs.existsSync('./local.config.json')){	
@@ -41,6 +42,20 @@ gulp.task('php', () => {
         .pipe(newer(php.build))
         .pipe(gulp.dest(php.build));
 });
+
+// FONTS settings
+const fonts = {
+    src: [config.dir.src + 'fonts/**/*.*','!' + config.dir.src + 'fonts/**/*.html','!' + config.dir.src + 'fonts/**/*.css'],
+    build: config.dir.build + 'fonts'
+};
+
+// copy FONTS files
+gulp.task('fonts', () => {
+    return gulp.src(fonts.src)
+        .pipe(newer(fonts.build))
+        .pipe(gulp.dest(fonts.build));
+});
+
 
 const images = {
     src: config.dir.src + 'images/**/*',
@@ -115,8 +130,14 @@ gulp.task('js', () => {
 
 });
 
+// clean dist dir
+gulp.task('clean', () => {
+    return gulp.src(config.dir.build, {read: false})
+        .pipe(clean());
+});
+
 // run all tasks
-gulp.task('build', gulp.series('php', 'css', 'js'));
+gulp.task('build', gulp.series('clean', 'fonts', 'php', 'css', 'js'));
 
 // Browsersync options
 const syncOpts = {
