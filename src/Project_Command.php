@@ -246,7 +246,7 @@ class Project_Command extends WP_CLI_Command {
         $base_src = "$cwd/src"; 
 
         // nie wymaga slug w parametrze 
-        $skip_slug = array('src' , 'log');
+        $skip_slug = array('src' , 'log', 'typography');
 
         if(!in_array($args[0], $skip_slug )){
             if (!isset( $args[1]) || ! preg_match( '/^[a-z][a-z0-9\-_]*$/', $args[1] ) ) {
@@ -341,9 +341,9 @@ class Project_Command extends WP_CLI_Command {
                 $files_written = $this->create_files( $files_array, $force );
 
             break;
-            case 'typology':
-                $typology_content = dirname( dirname( __FILE__ ) ) . '/templates/typology.txt';
-                WP_CLI::runcommand( "post create $typology_content --post_type=page --post_title=Typology --post_status=publish" );                 
+            case 'typography':
+                $typography_content = dirname( dirname( __FILE__ ) ) . '/templates/typography.txt';
+                WP_CLI::runcommand( "post create $typography_content --post_type=page --post_title=typography --post_status=publish" );                 
             break;
             case 'page-template':
             case 'pt': 
