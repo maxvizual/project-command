@@ -132,7 +132,7 @@ gulp.task('js', () => {
 
 // clean dist dir
 gulp.task('clean', () => {
-    return gulp.src(config.dir.build, {read: false})
+    return gulp.src(config.dir.build, {read: false, allowEmpty: true})
         .pipe(clean());
 });
 
