@@ -289,24 +289,6 @@ class Project_Command extends WP_CLI_Command
                     "$theme_path/style.css" => self::mustache_render('src/css/style.css.mustache', $data),
                 ), $force);
 
-                function recurse_copy($templates_src, $theme_path)
-                {
-                    $dir = opendir($templates_src);
-                    @mkdir($theme_path);
-                    while (false !== ($file = readdir($dir))) {
-                        if (($file != '.') && ($file != '..')) {
-                            if (is_dir($templates_src.'/'.$file)) {
-                                recurse_copy($templates_src.'/'.$file, $theme_path.'/'.$file);
-                            } else {
-                                copy($templates_src.'/'.$file, $theme_path.'/'.$file);
-                            }
-                        }
-                    }
-                    closedir($dir);
-                }
-                recurse_copy($templates_src, $base_src);
-
-                WP_CLI::runcommand("theme activate $slug");
                 WP_CLI::runcommand('project add src');
                 WP_CLI::runcommand('project add log');
 
