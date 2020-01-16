@@ -22,7 +22,7 @@ class Project_Command extends WP_CLI_Command {
 
         
         WP_CLI::line( "=======================" );
-        WP_CLI::line( " WordPress Installer!! " );
+        WP_CLI::line( " RK WordPress Installer!! " );
         WP_CLI::line( "=======================" );
         
         $sitename = \cli\prompt( 'Project/Site Name', '' );
@@ -48,6 +48,7 @@ class Project_Command extends WP_CLI_Command {
         file_put_contents("$slug/index.php", "<?php\ndefine('WP_USE_THEMES', true); \nrequire(__DIR__ . '/wp/wp-blog-header.php');");
         file_put_contents("$slug/README.md", self::mustache_render( 'README.md.mustache', array() ));
         file_put_contents("$slug/app/mu-plugins/mu-autoloader.php", self::mustache_render( 'mu-autoloader.php.mustache', array() ));
+        file_put_contents("$slug/acf-import.json", self::mustache_render( 'acf-import.json.mustache', array() ));
         
         @chdir($slug);
                      
@@ -65,11 +66,15 @@ class Project_Command extends WP_CLI_Command {
          $wpuseremail = \cli\prompt( 'WP User Email', 'admin@localhost.pl' );
 
         //set wp-config constants
+        WP_CLI::runcommand( "config set ALLOW_UNFILTERED_UPLOADS true --raw --type=constant" );       
         WP_CLI::runcommand( "config set WP_DEBUG true --raw --type=constant" );       
+        WP_CLI::runcommand( "config set WP_DEBUG_DISPLAY false --raw --type=constant" );       
         WP_CLI::runcommand( "config set WP_HOME  '{$wpurl}' --raw --type=constant" );       
         WP_CLI::runcommand( "config set WP_SITEURL '{$wpurl}/wp/' --raw --type=constant" );
         WP_CLI::runcommand( "config set WP_CONTENT_DIR \"dirname(__FILE__) . '/app'\" --raw --type=constant");
         WP_CLI::runcommand( "config set WP_CONTENT_URL \"WP_HOME . '/app'\" --raw --type=constant");
+        WP_CLI::runcommand( "config set WP_DIR \"dirname(__FILE__)\" --raw --type=constant");
+        WP_CLI::runcommand( "config set WP_REMOTE_URL \"\" --type=constant");
         
         WP_CLI::runcommand( "core install --url=\"$wpurl\" --title=\"$sitename\" --admin_user=\"$wpuser\" --admin_password=\"$wpuser\" --admin_email=\"$wpuseremail\"" );  
 
@@ -82,6 +87,12 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::runcommand( "plugin delete hello" ); 
         WP_CLI::runcommand( "theme delete twentyfifteen" ); 
         WP_CLI::runcommand( "theme delete twentysixteen" ); 
+
+        // install mu-plugins
+        WP_CLI::runcommand( "project muplugins" );
+
+        // create pages and import acf json
+        WP_CLI::runcommand( "project create_pages" );
         
         //create menu
         WP_CLI::runcommand( "menu create \"Top Menu\"" ); 
@@ -116,7 +127,7 @@ class Project_Command extends WP_CLI_Command {
         $this->get_config();
         
         WP_CLI::line( "=======================" );
-        WP_CLI::line( " WordPress Installer!! " );
+        WP_CLI::line( " RK WordPress Installer!! " );
         WP_CLI::line( "=======================" );  
 
         $slug = basename ( getcwd() );
@@ -134,7 +145,7 @@ class Project_Command extends WP_CLI_Command {
         }
         
                         
-        // //create database, download and install WordPress
+        // create database, download and install WordPress
         WP_CLI::runcommand( "core download" );        
         WP_CLI::runcommand( "core config --dbname=$dbname --dbuser=$dbuser --dbpass=$dbpass" );
         WP_CLI::runcommand( "db create" );  
@@ -151,7 +162,6 @@ class Project_Command extends WP_CLI_Command {
         WP_CLI::runcommand( "config set WP_DEBUG true --raw --type=constant" );       
         WP_CLI::runcommand( "config set WP_HOME  '{$wpurl}/' --raw --type=constant" );       
         WP_CLI::runcommand( "config set WP_SITEURL '{$wpurl}/wp/' --raw --type=constant" );
-
         WP_CLI::runcommand( "config set WP_CONTENT_DIR \"dirname(__FILE__) . '/app'\" --raw --type=constant --add");
         WP_CLI::runcommand( "config set WP_CONTENT_URL \"WP_HOME . '/app'\" --raw --type=constant --add");
 
@@ -268,25 +278,32 @@ class Project_Command extends WP_CLI_Command {
 
                 $theme_root = get_theme_root();
                 $theme_path = "$theme_root/$slug";
+                $templates_src = dirname( dirname( __FILE__ ) ) . '/templates/src';
 
                 if(!is_dir($theme_path)){
                     @mkdir($theme_path, 0777, true);
                 }
 
                 $files_written = $this->create_files( array(
-                    "$theme_path/header.php" => self::mustache_render( 'src/php/header.php.mustache', $data ),
-                    "$theme_path/footer.php" => self::mustache_render( 'src/php/footer.php.mustache', $data ),
-                    "$theme_path/index.php" => self::mustache_render( 'src/php/index.php.mustache', $data ),
-                    "$theme_path/functions.php" => self::mustache_render( 'src/php/functions.php.mustache', $data ),
-                    "$theme_path/inc/class-wp-bootstrap-navwalker.php" => self::read_file( 'src/php/inc/class-wp-bootstrap-navwalker.php.mustache', $data ),
-                    "$theme_path/inc/enqueue-scripts-styles.php" => self::read_file( 'src/php/inc/enqueue-scripts-styles.php.mustache', $data ),
-                    "$theme_path/inc/custom-post-types.php" => self::read_file( 'src/php/inc/custom-post-types.php.mustache', $data ),
-                    "$theme_path/inc/helpers-functions.php" => self::read_file( 'src/php/inc/helpers-functions.php.mustache', $data ),
-                    "$theme_path/inc/setup-theme.php" => self::read_file( 'src/php/inc/setup-theme.php.mustache', $data ),
-                    "$theme_path/inc/shortcodes.php" => self::read_file( 'src/php/inc/shortcodes.php.mustache', $data ),
                     "$theme_path/style.css" => self::mustache_render( 'src/css/style.css.mustache', $data ),
-                    "$theme_path/script.js" => self::mustache_render( 'src/js/script.js.mustache', $data ),
                 ), $force );
+
+                function recurse_copy($templates_src,$theme_path) {
+                    $dir = opendir($templates_src);
+                    @mkdir($theme_path);
+                    while(false !== ( $file = readdir($dir)) ) {
+                    if (( $file != '.' ) && ( $file != '..' )) {
+                    if ( is_dir($templates_src . '/' . $file) ) {
+                    recurse_copy($templates_src . '/' . $file,$theme_path . '/' . $file);
+                    }
+                    else {
+                    copy($templates_src . '/' . $file,$theme_path . '/' . $file);
+                    }
+                    }
+                    }
+                    closedir($dir);
+                    }
+                    recurse_copy($templates_src,$theme_path);
 
                 WP_CLI::runcommand( "theme activate $slug" ); 
                 WP_CLI::runcommand( "project add src" ); 
@@ -304,6 +321,7 @@ class Project_Command extends WP_CLI_Command {
                 $dir = dirname( dirname( __FILE__ ) ) . '/templates/';
                 $files = self::find_all_files($dir . 'src');
                 $dirs = array_diff(scandir($dir . 'src'), array('.','..'));
+               
                 
                 if(!is_dir($base_src)){
                     @mkdir($base_src, 0777, true);
@@ -330,14 +348,22 @@ class Project_Command extends WP_CLI_Command {
                     ".git-ftp-ignore" => self::mustache_render( '.git-ftp-ignore.mustache', $data ),
                     ".git-ftp-include" => self::mustache_render( '.git-ftp-include.mustache', $data ),
                     ".gitignore" => self::mustache_render( '.gitignore.mustache', $data ),
-                    "README.md" => self::mustache_render( 'README.md.mustache',  $data  ),
                 );
-                foreach($files as $file){
-                    $file_template = str_replace( $dir, '', $file);
-                    $file_target = str_replace( '.mustache', '', $file_template);
-                    $files_array["$base/$file_target"] = self::mustache_render($file_template, $data );
+                foreach( $files as $file ){
+                    $file_template = str_replace( $dir, '', $file );
+                    
+
+                    $explode = explode( '.', basename( $file_template ) );
+                    $extension = end( $explode );
+
+                    if( $extension == 'mustache' ) {
+                        $file_target = str_replace( '.mustache', '', $file_template );
+                        $files_array["$base/$file_target"] = self::mustache_render( $file_template, $data );
+                    } else {
+                        $files_array["$base/$file_template"] = self::read_file( $file );
+                    }
                 }
-                
+               
                 $files_written = $this->create_files( $files_array, $force );
 
             break;
@@ -609,8 +635,8 @@ class Project_Command extends WP_CLI_Command {
 		return Utils\mustache_render( dirname( dirname( __FILE__ ) ) . '/templates/' . $template, $data );
     }
 
-    private static function read_file( $template ) {
-		return file_get_contents( dirname( dirname( __FILE__ ) ) . '/templates/' . $template );
+    private static function read_file( $file ) {
+		return file_get_contents( $file );
     }
 
     private static function find_all_files($dir) { 
@@ -626,4 +652,51 @@ class Project_Command extends WP_CLI_Command {
         return $result; 
     } 
     
+    public function muplugins() {
+        $plugins = [
+            'acf',
+            'advanced-custom-fields-wpcli',
+            'cf-importer',
+            'disable-gutenberg',
+            'svg-support',
+            'theme-file-name',
+            'wp-sync-db',
+            'wp-sync-db-cli'
+        ];
+        $url = 'http://pub.mwga.atthost24.pl/plugins';
+
+        foreach($plugins as $item) {
+            if( !file_exists("app/mu-plugins/$item") ) {
+                WP_CLI::runcommand( "plugin install $url/$item.zip" );
+                @rename( "app/plugins/$item", "app/mu-plugins/$item" );
+            }
+        }
+    }
+
+    public function create_pages() {
+        WP_CLI::runcommand( "site empty --yes" ); // Empties a site of its content (posts, comments, terms, and meta).
+
+        $pages = [
+            'Skrócona polityka prywatności',
+            'Polityka cookies',
+            'Strona główna',
+            'Finansowanie',
+            'Lokalizacja',
+            'Mieszkania',
+            'Inwestycja',
+            'Deweloper',
+            'Kontakt',
+            'Oferta',
+        ];
+        foreach($pages as $item) {
+            if($item == 'Mieszkania') {
+                WP_CLI::runcommand( "post create --post_type=page --post_title=\"$item\" --post_status=draft --post_parent=10" );
+            } else {
+                WP_CLI::runcommand( "post create --post_type=page --post_title=\"$item\" --post_status=draft" );
+            }
+        }
+
+        // WP_CLI::runcommand( "wp acf import --json_file=acf-import.json" );
+    }
+
 }

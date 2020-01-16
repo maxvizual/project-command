@@ -1,0 +1,92 @@
+$primary_font: Arial, Helvetica, sans-serif;
+$font_regular: 400;
+$font_medium: 500;
+$font_bold: 700;
+
+html,
+body {
+    font-family: $primary_font;
+    font-weight: $font_regular;
+    font-size: 10px;
+}
+
+h1,
+h2,
+h3,
+p,
+a,
+span,
+input {
+    margin: 0;
+    padding: 0;
+    color: $black;
+    text-decoration: none;
+    font-weight: $font_regular;
+
+    &:hover {
+        text-decoration: none;
+        color: $black;
+    }
+}
+
+$multipiers: (
+    xs: 1,
+    sm: 1,
+    md: 1.1,
+    lg: 1.3,
+    xl: 1.3,
+    xxl: 1.6
+);
+
+@mixin multipliers($multipiers) {
+    @each $multipier in map-keys($multipiers) {
+        @include media-breakpoint-up(#{$multipier}) {
+
+            h1 {
+                $size: 45px;
+                font-size: $size * map-get($multipiers, $multipier);
+                font-weight: $font_regular;
+            }
+
+            h2 {
+                $size: 20px;
+                font-size: $size * map-get($multipiers, $multipier);
+                font-weight: $font_medium;
+            }
+
+            h3 {
+                $size: 16px;
+                font-size: $size * map-get($multipiers, $multipier);
+                font-weight: $font_regular;
+            }
+
+            p,
+            a,
+            span,
+            input,
+            ::placeholder,
+            label,
+            li,
+            textarea {
+                $size: 14px;
+                font-size: $size * map-get($multipiers, $multipier);
+                font-weight: $font_regular;
+                color: $black;
+            }
+
+            .btn {
+                $size: 16px;
+                font-size: $size * map-get($multipiers, $multipier);
+                font-weight: $font_medium;
+            }
+
+            .tooltip {
+                $size: 10px;
+                font-size: $size * map-get($multipiers, $multipier);
+                font-weight: $font_regular;
+            }
+        }
+    }
+}
+
+@include multipliers($multipiers);

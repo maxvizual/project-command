@@ -1,0 +1,23 @@
+@font-face {
+    font-family: "{{ fontName }}";
+    src: {{{ src }}};
+}
+@mixin iconstyle {
+    display: inline-block;
+    font-family: {{ fontName }} !important;
+    font-style: 400;
+    font-weight: 400 !important;
+    font-variant: 400;
+    text-transform: none;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+[class^="{{classPrefix}}"]:before, [class*=" {{classPrefix}}"]:before {
+    @include iconstyle();
+}
+
+{{# each codepoints }}
+.{{ ../classPrefix }}{{ @key }}:before {content: "\\{{ this }}";}
+{{/ each }}

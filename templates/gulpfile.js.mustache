@@ -1,182 +1,152 @@
-// Gulp.js configuration
-'use strict';
+/* Load all required plugins */
+var browserSync = require('browser-sync').create();
+var gulp = require('gulp');
+var { series, parallel } = require('gulp');
+var autoprefixer = require('gulp-autoprefixer');
+var concat = require('gulp-concat');
+var cleancss = require('gulp-clean-css');
+var fs = require('fs');
+var ignore = require('gulp-ignore');
+var imagemin = require('gulp-imagemin');
+var newer = require('gulp-newer');
+var rimraf = require('gulp-rimraf');
+var scss = require('gulp-sass');
+var sourcemaps = require('gulp-sourcemaps');
+var uglify = require('gulp-uglify');
+var yaml = require('js-yaml');
 
-const           
-    fs = require('fs'),
-    // Gulp and plugins
-    gulp = require('gulp'),
-    gutil = require('gulp-util'),
-    newer = require('gulp-newer'),
-    imagemin = require('gulp-imagemin'),
-    sass = require('gulp-sass'),
-    postcss = require('gulp-postcss'),
-    deporder = require('gulp-deporder'),
-    concat = require('gulp-concat'),
-    stripdebug = require('gulp-strip-debug'),
-    sourcemaps = require('gulp-sourcemaps'),
-    clean = require('gulp-clean'),
-    uglify = require('gulp-uglify');
+/* Load settings from config.yml */
+var _gulpconfig = loadConfig(),
+    COMPATIBILITY = _gulpconfig.COMPATIBILITY,
+    PATHS = _gulpconfig.PATHS,
+    PROXY = _gulpconfig.PROXY,
+    PORT = _gulpconfig.PORT;
 
-if(fs.existsSync('./local.config.json')){	
-    // the file exists
-    var config = require('./local.config.json');
-}else{
-    // the file doesn't exists
-    var config = require('./config.json');
+function loadConfig() {
+    var ymlFile = fs.readFileSync('gulpconfig.yml', 'utf8');
+    return yaml.load(ymlFile);
 }
 
-
-// Browser-sync
-var browsersync = false;
-
-
-// PHP settings
-const php = {
-    src: config.dir.src + 'php/**/*.php',
-    build: config.dir.build
-};
-
-// copy PHP files
-gulp.task('php', () => {
-    return gulp.src(php.src)
-        .pipe(newer(php.build))
-        .pipe(gulp.dest(php.build));
+/* Remove production directory contents */
+gulp.task('clean', function () {
+    return gulp.src('./' + PATHS.dist + '/*', {
+        read: false
+    })
+        .pipe(ignore('node_modules/**'))
+        .pipe(rimraf());
 });
 
-// FONTS settings
-const fonts = {
-    src: [config.dir.src + 'fonts/**/*.*','!' + config.dir.src + 'fonts/**/*.html','!' + config.dir.src + 'fonts/**/*.css'],
-    build: config.dir.build + 'fonts'
-};
-
-// copy FONTS files
-gulp.task('fonts', () => {
-    return gulp.src(fonts.src)
-        .pipe(newer(fonts.build))
-        .pipe(gulp.dest(fonts.build));
+/* Process custom scss files */
+gulp.task('scss-custom', function () {
+    return gulp.src(PATHS.scss.custom)
+        .pipe(sourcemaps.init({ largeFile: true }))
+        .pipe(scss().on('error', scss.logError))
+        .pipe(autoprefixer({
+            overrideBrowserslist: COMPATIBILITY
+        }))
+        .pipe(concat('style.css'))
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(PATHS.dist))
+        .pipe(browserSync.stream());
 });
 
-
-const images = {
-    src: config.dir.src + 'images/**/*',
-    build: config.dir.build + 'images/'
-};
-
-// image processing
-gulp.task('images', () => {
-    return gulp.src(images.src)
-        .pipe(newer(images.build))
-        .pipe(imagemin())
-        .pipe(gulp.dest(images.build));
+/* Process scss libraries */
+gulp.task('scss-lib', function () {
+    return gulp.src(PATHS.scss.lib)
+        .pipe(scss().on('error', scss.logError))
+        .pipe(autoprefixer({
+            overrideBrowserslist: COMPATIBILITY
+        }))
+        .pipe(concat('lib.css'))
+        .pipe(gulp.dest(PATHS.dist))
+        .pipe(browserSync.stream());
 });
 
-// CSS settings
-var css = {
-    src: [config.dir.src + 'scss/*.scss'],
-    watch: config.dir.src + 'scss/**/*',
-    build: config.dir.build,
-    sassOpts: {
-        outputStyle: 'nested',
-        imagePath: images.build,
-        precision: 3,
-        errLogToConsole: true
-    },
-    processors: [
-        require('postcss-assets')({
-            loadPaths: ['images/', 'fonts/'],
-            basePath: config.dir.build,
-            baseUrl:  config.dir.baseUrl
-        }),
-        require('autoprefixer')({
-            browsers: config.autoprefixer.browsers
-        }),
-        require('css-mqpacker'),
-        require('cssnano')
-    ]
-};
+/* Process & merge scss libraries & custom files */
+gulp.task('scss-bundle', function () {
+    return gulp.src(PATHS.scss.lib.concat(PATHS.scss.custom))
+        .pipe(scss().on('error', scss.logError))
+        .pipe(autoprefixer({
+            overrideBrowserslist: COMPATIBILITY
+        }))
+        .pipe(concat('style.css'))
+        .pipe(cleancss({ compatibility: 'ie8' }))
+        .pipe(gulp.dest(PATHS.dist));
+});
 
-// CSS processing
-gulp.task('css', gulp.series('images', () => {
-    return gulp.src(css.src)
-        .pipe(browsersync ? sourcemaps.init() : gutil.noop())
-        .pipe(sass(css.sassOpts))
-        .pipe(postcss(css.processors))
-        .pipe(browsersync ? sourcemaps.write() : gutil.noop())
-        .pipe(gulp.dest(css.build))
-        .pipe(browsersync ? browsersync.reload({
-            stream: true
-        }) : gutil.noop());
-}));
+/* Process custom javascript files */
+gulp.task('scripts-custom', function () {
+    return gulp.src(PATHS.scripts.custom)
+        .pipe(sourcemaps.init({ largeFile: true }))
+        .pipe(concat('app.js'))
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest(PATHS.dist));
+});
 
-// JavaScript settings
-const js = {
-    src: config.dir.src + 'js/**/*',
-    build: config.dir.build,
-    filename: 'script.js'
-};
+/* Process javascript libraries */
+gulp.task('scripts-lib', function () {
+    return gulp.src(PATHS.scripts.lib)
+        .pipe(concat('lib.js'))
+        .pipe(gulp.dest(PATHS.dist));
+});
 
-// JavaScript processing
-gulp.task('js', () => {
-
-    return gulp.src(js.src)
-        .pipe(deporder())
-        .pipe(concat(js.filename))
-        .pipe(browsersync ?  gutil.noop() : stripdebug())
+/* Process & merge javascript libraries & custom files */
+gulp.task('scripts-bundle', function () {
+    return gulp.src(PATHS.scripts.lib.concat(PATHS.scripts.custom))
+        .pipe(concat('bundle.min.js'))
         .pipe(uglify())
-        .pipe(gulp.dest(js.build))
-        .pipe(browsersync ? browsersync.reload({
-            stream: true
-        }) : gutil.noop());
-
+        .pipe(gulp.dest(PATHS.dist));
 });
 
-// clean dist dir
-gulp.task('clean', () => {
-    return gulp.src(config.dir.build, {read: false, allowEmpty: true})
-        .pipe(clean());
+/* Compress & copy images */
+gulp.task('images', function () {
+    return gulp.src(PATHS.images)
+        .pipe(newer(PATHS.dist + '/images'))
+        .pipe(imagemin())
+        .pipe(gulp.dest(PATHS.dist + '/images'));
 });
 
-// run all tasks
-gulp.task('build', gulp.series('clean', 'fonts', 'php', 'css', 'js'));
-
-// Browsersync options
-const syncOpts = {
-    proxy: config.browsersync.proxy,
-    files: config.dir.build + '**/*',
-    open: process.argv.indexOf('--open') !== -1,
-    notify: false,
-    ghostMode: false,
-    port: config.browsersync.port,
-    ui: {
-        port: 8001
-    }
-};
-
-
-// browser-sync
-gulp.task('browsersync', () => {
-    if (browsersync === false) {
-        browsersync = require('browser-sync').create();
-        browsersync.init(syncOpts);
-    }
+/* Copy fonts */
+gulp.task('fonts', function () {
+    return gulp.src(PATHS.fonts)
+        .pipe(newer(PATHS.dist + '/fonts'))
+        .pipe(gulp.dest(PATHS.dist + '/fonts'));
 });
 
-// watch for file changes
-gulp.task('watch', gulp.parallel('browsersync', () => {
-    
-    // page changes
-    gulp.watch(php.src, gulp.series('php'), browsersync ? browsersync.reload : {});
+gulp.task('php', function () {
+    return gulp.src(PATHS.php)
+        .pipe(newer(PATHS.dist))
+        .pipe(gulp.dest(PATHS.dist))
+});
 
-    // image changes
-    gulp.watch(images.src, gulp.series('images'));
+gulp.task('pdf', function () {
+    return gulp.src(PATHS.pdf)
+        .pipe(newer(PATHS.dist))
+        .pipe(gulp.dest(PATHS.dist + '/pdf'))
+});
 
-    // CSS changes
-    gulp.watch(css.watch, gulp.series('css'));
+/* Start BrowserSync server */
+gulp.task('server', function () {
+    browserSync.init({
+        proxy: PROXY,
+        port: PORT,
+        open: false
+    });
+});
 
-    // JavaScript main changes
-    gulp.watch(js.src, gulp.series('js'));
+/* Watch scss, & JavaScript files for changes */
+gulp.task('watch', function () {
+    gulp.watch(PATHS.scss.custom, gulp.series('scss-custom'));
+    gulp.watch(PATHS.scss.lib, gulp.series('scss-lib'));
+    gulp.watch(PATHS.scripts.custom, gulp.series('scripts-custom')).on('change', browserSync.reload);
+    gulp.watch(PATHS.scripts.lib, gulp.series('scripts-lib')).on('change', browserSync.reload);
+    gulp.watch(PATHS.images, gulp.series('images')).on('change', browserSync.reload);
+    gulp.watch(PATHS.fonts, gulp.series('fonts')).on('change', browserSync.reload);
+    gulp.watch(PATHS.php, gulp.series('php')).on('change', browserSync.reload);
+});
 
-}));
+/* Use if you only want to make production-ready build*/
+gulp.task('build', series('clean', parallel('fonts', 'images', 'scripts-bundle', 'scss-bundle'), 'php', 'pdf'));
 
-// default task
-gulp.task('default', gulp.series('build', 'watch'));
+/* Run a developement environment */
+gulp.task('develop', series('clean', parallel('fonts', 'images', 'scripts-lib', 'scripts-custom', 'scss-lib', 'scss-custom'), 'php', 'pdf', parallel('watch', 'server')));

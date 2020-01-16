@@ -1,0 +1,30 @@
+$black: #000000;
+$white: #ffffff;
+
+$colors: (
+    black: $black,
+    white: $white
+);
+
+@mixin colors($colors) {
+
+    @each $color in map-keys($colors) {
+        .text-#{$color} {
+            color: map-get($colors, $color);
+            &:hover {
+                color: map-get($colors, $color);
+            }
+        }
+
+        .bg-#{$color} {
+            background-color: map-get($colors, $color);
+        }
+        @each $color2 in map-keys($colors) {
+            .bg-#{$color}-#{$color2} {
+                background-image: linear-gradient(to right, map-get($colors, $color), map-get($colors, $color2));
+            }
+        }
+    }
+}
+
+@include colors($colors);
