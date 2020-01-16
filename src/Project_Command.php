@@ -285,6 +285,10 @@ class Project_Command extends WP_CLI_Command
                     @mkdir($theme_path, 0777, true);
                 }
 
+                $files_written = $this->create_files(array(
+                    "$theme_path/style.css" => self::mustache_render('src/css/style.css.mustache', $data),
+                ), $force);
+
                 function recurse_copy($templates_src, $theme_path)
                 {
                     $dir = opendir($templates_src);
