@@ -343,7 +343,6 @@ class Project_Command extends WP_CLI_Command
                 $files_array = array(
                     'package.json' => self::mustache_render('package.json.mustache', $data),
                     'gulpfile.js' => self::mustache_render('gulpfile.js.mustache', $data),
-                    'config.json' => self::mustache_render('config.json.mustache', $data),
                     '.git-ftp-ignore' => self::mustache_render('.git-ftp-ignore.mustache', $data),
                     '.git-ftp-include' => self::mustache_render('.git-ftp-include.mustache', $data),
                     '.gitignore' => self::mustache_render('.gitignore.mustache', $data),
